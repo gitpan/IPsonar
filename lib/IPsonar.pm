@@ -3,6 +3,10 @@ package IPsonar;
 use strict;
 use warnings;
 
+use version; 
+our $VERSION;
+$VERSION = "0.14";
+
 use Net::SSLeay qw(make_headers get_https);
 use URI;
 use XML::Simple;
@@ -22,14 +26,10 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.13
+Version 0.14
 
 =cut
 
-
-use version; 
-our $VERSION;
-$VERSION = qv("0.13");
 
 =head1 SYNOPSIS
 
@@ -39,9 +39,7 @@ information from reports.
 
 Code snippet.
 
-    use IPsonar;
-
-    my $rsn = Lumeta50API->new('rsn_address_or_name','username','password');
+    my $rsn = IPsonar->new('rsn_address_or_name','username','password');
     my $test_report = 1;
     my @ip_list;
 
