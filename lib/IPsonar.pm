@@ -22,13 +22,14 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.12
+Version 0.13
 
 =cut
 
 
 use version; 
-our $VERSION = qv("0.12");
+our $VERSION;
+$VERSION = qv("0.13");
 
 =head1 SYNOPSIS
 
