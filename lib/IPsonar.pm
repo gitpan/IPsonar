@@ -5,7 +5,7 @@ use warnings;
 
 use version; 
 our $VERSION;
-$VERSION = "0.14";
+$VERSION = "0.15";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -26,7 +26,7 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.14
+Version 0.15
 
 =cut
 
@@ -40,18 +40,17 @@ information from reports.
 Code snippet.
 
     my $rsn = IPsonar->new('rsn_address_or_name','username','password');
-    my $test_report = 1;
+    my $test_report = 23;
     my @ip_list;
 
-    $results = $rsn->query('detail.devices',
+    my $results = $rsn->query('detail.devices',
         {
             'q.f.report.id'                 =>  $test_report,
-            'q.f.servicediscovery.ports'    =>  2300,
+            'q.f.servicediscovery.ports'    =>  23,
         }) or die "Problem ".$rsn->error;
 
-    my $count = 0;
     while (my $x = $rsn->next_result) {
-        push @ip_list $x->{ip};
+        push @ip_list,$x->{ip};
     }
 
 =head1 SUBROUTINES/METHODS
@@ -121,9 +120,10 @@ sub new_with_cert {
 
 =back
 
-
-Issue a query (get results for non-paged queries)
-    $rsn->query ( method, hashref_of_parameters)
+Issue a query (get results for non-paged queries).
+If you're getting back paged data we'll return the number of items
+available in the query.  If we're getting back a single result we
+return a hashref to those results.
 
 =cut
 
@@ -221,7 +221,7 @@ sub query {
 
 =back
 
-Get paged results
+Get next paged results
 =cut
 
 sub next_result {
