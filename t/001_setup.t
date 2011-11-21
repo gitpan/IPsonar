@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
+use Test::More tests => 4;
 use Test::Builder;
 use Data::Dumper;
 use 5.10.0;
@@ -17,17 +17,24 @@ BEGIN { use_ok('IPsonar') }
 my $rsn;
 my $rsn_address = $ENV{TEST_RSN};
 my $test_report = $ENV{TEST_REPORT};
-ok ($rsn_address && $test_report, 'TEST_RSN and TEST_REPORT env variables set');
 
-$rsn = IPsonar->new($rsn_address,'admin','admin');
-my $results;
-eval {
-    $results = $rsn->query('management.systemInformation', { });
-};
-is ($results->{apiVersion}, '5.0', 'Connect to server and verify apiVersion');
+SKIP: {
+    if (! ( $rsn_address && $test_report )) {
+        skip ( "TEST_RSN or TEST_REPORT not set.", 2 );
+    }
 
-if (grep {$_ eq 0} Test::More->builder->summary) {
-    BAIL_OUT("Can't connect to RSN, no point in continuing to test.");
+    $rsn = IPsonar->new($rsn_address,'admin','admin');
+    my $results;
+    eval {
+        $results = $rsn->query('management.systemInformation', { });
+    };
+    is ($results->{apiVersion}, '5.0', 'Connect to RSN and verify apiVersion');
+
+    $rsn = IPsonar->new($rsn_address,'admin','admin');
+    eval {
+        $results = $rsn->query('invalid.ipsonar.call', { });
+    };
+    like ($@, qr/RuntimeException/, 'Check error handling for bad call');
 }
 
 $rsn = IPsonar->new('127.0.0.1','admin','admin');
@@ -39,9 +46,4 @@ eval {
 };
 like( $@, qr/Connection refused/,"query croaks on invalid RSN");
 
-$rsn = IPsonar->new($rsn_address,'admin','admin');
-eval {
-    $results = $rsn->query('invalid.ipsonar.call', { });
-};
-like ($@, qr/RuntimeException/, 'Check error handling for bad call');
 

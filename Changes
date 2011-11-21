@@ -8,3 +8,8 @@ Revision history for IPsonar
 
 0.15    Correct the code snippet.
 
+0.16    Change the tests so that we skip the ones that require
+        access to a report server when one isn't available.
+        Also tweak the example and note that "Lumeta" and 
+        "IPsonar" are registered marks of the Lumeta Corporation.
+

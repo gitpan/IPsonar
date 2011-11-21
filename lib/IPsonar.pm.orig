@@ -3,10 +3,6 @@ package IPsonar;
 use strict;
 use warnings;
 
-use version; 
-our $VERSION;
-$VERSION = "0.16";
-
 use Net::SSLeay qw(make_headers get_https);
 use URI;
 use XML::Simple;
@@ -19,8 +15,6 @@ use constant {
     DEFAULT_PAGE_SIZE => 100,
 };
 
-# "IPsonar" and "Lumeta" are both registered marks of the Lumeta Corporation.
-
 
 =head1 NAME
 
@@ -28,10 +22,12 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.16
+Version 0.01
 
 =cut
 
+
+use version; our $VERSION = qv('0.01');
 
 =head1 SYNOPSIS
 
@@ -39,24 +35,23 @@ This module wraps the IPsonar RESTful API.
 It handles the paging and https stuff so you can concentrate on extracting
 information from reports.
 
-"Lumeta" and "IPsonar" are both registered trademarks of the Lumeta Coporation
+Code snippet.
 
-=head1 EXAMPLE
+    use IPsonar;
 
-    Script to get all the IP address for all the devices that have
-    port 23 open:
+    my $rsn = Lumeta50API->new('rsn_address_or_name','username','password');
+    my $test_report = 1;
+    my @ip_list;
 
-    my $rsn = IPsonar->new('rsn_address_or_name','username','password');
-    my $test_report = 23;
-
-    my $results = $rsn->query('detail.devices',
+    $results = $rsn->query('detail.devices',
         {
             'q.f.report.id'                 =>  $test_report,
-            'q.f.servicediscovery.ports'    =>  23,
+            'q.f.servicediscovery.ports'    =>  2300,
         }) or die "Problem ".$rsn->error;
 
+    my $count = 0;
     while (my $x = $rsn->next_result) {
-       print "IP: $x->{ip}\n";
+        push @ip_list $x->{ip};
     }
 
 =head1 SUBROUTINES/METHODS
@@ -66,15 +61,11 @@ information from reports.
 
 #-----------------------------------------------------------
 # new(rsn, username, password)
-=over 8
-
-=item new (rsn, username, password)
-
-=back
-
+=head2 new ( rsn, username, password )
 Establish connection to a report server using username / password 
-Note:  This doesn't actually initiate a connection until you issue
-a query.
+    my $rsn = new ( rsn, username, password )
+
+
 =cut
 
 sub new {
@@ -86,20 +77,17 @@ sub new {
     $self->{request} = sub {    #request(query, parameters)
         my $query  = shift;
         my $params = shift;
-        _request_using_password( $rsn, $query, $params, $username, $password );
+        request_using_password( $rsn, $query, $params, $username, $password );
     };
     bless $self, $class;
     return $self;
 }
 
 #-----------------------------------------------------------
-=over 8
-
-=item new_with_cert (rsn, path_to_cert, password)
-
-=back
-
+=head2 new_with_cert ( rsn, path_to_cert, password )
 Establish connection to a report server using SSL certificate
+    my $rsn = new_with_cert ( rsn, path_to_cert, password )
+
 
 =cut
 
@@ -112,7 +100,7 @@ sub new_with_cert {
     $self->{request} = sub {    #request(query, parameters)
         my $query  = shift;
         my $params = shift;
-        _request_using_certificate( $rsn, $query, $params, $cert_path,
+        request_using_certificate( $rsn, $query, $params, $cert_path,
             $password );
     };
     bless $self, $class;
@@ -120,16 +108,10 @@ sub new_with_cert {
 }
 
 #-----------------------------------------------------------
-=over 8
+=head2 $rsn->query ( method, hashref_of_parameters)
+Issue a query (get results for non-paged queries)
+    $rsn->query ( method, hashref_of_parameters)
 
-=item $rsn->query ( method, hashref_of_parameters)
-
-=back
-
-Issue a query (get results for non-paged queries).
-If you're getting back paged data we'll return the number of items
-available in the query.  If we're getting back a single result we
-return a hashref to those results.
 
 =cut
 
@@ -171,42 +153,48 @@ sub query {
         croak $self->{error};
     }
 
-    $self->{xml} = $xml;
+    $self->{xml}      = $xml;
     $self->{page_row} = 0;
 
-    if (defined ($xml->{total}) and $xml->{total} == 0 ) {
+    # We requested paged data, but got back 0 rows
+    if ( defined( $xml->{total} ) and $xml->{total} == 0 ) {
         $self->{total} = 0;
         $self->{paged} = 1;
         return $xml;
     }
 
-    if ( $xml->{total} && $self->{params}->{'q.pageSize'} ) {    # Paged Data
+    #Paged Data
+    if ( $xml->{total} && $self->{params}->{'q.pageSize'} ) {
         $self->{total} = $xml->{total};
+
         my $page_size = $self->{params}->{'q.pageSize'};
+        my $total     = $self->{total};
 
         # Figure out what the key to the array data is
+        # KeyAttr => [] because otherwise XML::Simple tries to be clever
+        # and hand back a hashref keyed on "id" or "name" instead of an
+        # arrayref of items.
         my $temp = XMLin( $res, NoAttr => 1, KeyAttr => [] );
         my $key = ( keys %{$temp} )[0];
         $self->{pagedata} = $self->{xml}->{$key};
-        warn "Key = $key, Self = ".Dumper($self) if ! $self->{xml}->{$key};
+        carp "Key = $key, Self = " . Dumper($self) if !$self->{xml}->{$key};
 
         # Setup paging information
-        #TODO this is a honking mess, too many special conditions.
-        $self->{paged}    = 1;
-        $self->{max_page} = int( ($self->{total}-1) / $page_size );
+        $self->{paged} = 1;
+        $self->{max_page} = int( ( $total - 1 ) / $page_size );
 
         $self->{max_row} =
             $self->{params}->{'q.page'} < $self->{max_page}
-          ? $page_size-1
-          : ( ($self->{total} % $page_size) || $page_size ) - 1;
+          ? $page_size - 1
+          : ( $total % $page_size ) - 1;
 
         # There's only one page with $self->{total} items
-        if ($self->{params}->{'q.pageSize'} == $self->{total}) {
-            $self->{max_row} = $self->{total} - 1;
+        if ( $page_size == $total ) {
+            $self->{max_row} = $total - 1;
         }
 
         # We're looking at things with pagesize 1
-        if ($self->{params}->{'q.pageSize'} == 1) {
+        if ( $page_size == 1 ) {
             $self->{max_row} = 0;
         }
 
@@ -221,20 +209,13 @@ sub query {
 }
 
 #-----------------------------------------------------------
-=over 8
-
-=item $rsn->next_result ()
-
-=back
-
-Get next paged results
+=head2 $rsn->next_result ()
+Get paged results
+    $rsn->next_result ()
 =cut
 
 sub next_result {
     my $self = shift;
-
-    #print "page_row: $self->{page_row}, max_row: $self->{max_row}, ".
-    #        "page: $self->{params}->{'q.page'}, max_page: $self->{max_page}\n";
 
     #No results
     return 0 if $self->{total} == 0 && $self->{paged};
@@ -243,9 +224,10 @@ sub next_result {
     return $self->{xml} if !$self->{paged};
 
     #End of Data
-    if ($self->{params}->{'q.page'} == $self->{max_page} &&
-        $self->{page_row} > $self->{max_row}) {
-            return;
+    if (   $self->{params}->{'q.page'} == $self->{max_page}
+        && $self->{page_row} > $self->{max_row} )
+    {
+        return;
     }
 
     #End of Page
@@ -255,7 +237,7 @@ sub next_result {
     }
 
     #Single item on last page
-    if ( $self->{page_row} == 0 and $self->{max_row} == 0 ) { 
+    if ( $self->{page_row} == 0 and $self->{max_row} == 0 ) {
         $self->{page_row}++;
         return $self->{pagedata};
     }
@@ -265,12 +247,7 @@ sub next_result {
 }
 
 #-----------------------------------------------------------
-=over 8
-
-=item $rsn->error
-
-=back
-
+=head2 $rsn->error
 Get error information
 =cut
 
@@ -296,10 +273,10 @@ sub error {
 ### Output:
 ###  The page in XML format returned by IPsonar
 ###
-sub _request_using_certificate {
+sub request_using_certificate {
     my ( $server, $method, $params, $cert, $passwd ) = @_;
 
-    my $path = _get_path( $method, $params );    # See "Constructing URLs";
+    my $path = get_path( $method, $params );    # See "Constructing URLs";
     my $url = "https://${server}${path}";
 
     local $ENV{HTTPS_PKCS12_FILE}     = $cert;
@@ -324,15 +301,15 @@ sub _request_using_certificate {
 ### Output:
 ### The page in XML format returned by IPsonar
 ###
-sub _request_using_password {
+sub request_using_password {
     my ( $server, $method, $params, $uname, $passwd ) = @_;
     my $port = HTTPS_TCP_PORT;                  # The usual port for https
-    my $path = _get_path( $method, $params );    # See "Constructing URLs"
+    my $path = get_path( $method, $params );    # See "Constructing URLs"
     my $authstring = MIME::Base64::encode( "$uname:$passwd", q() );
     my ( $page, $result, %headers ) =           # we're only interested in $page
       Net::SSLeay::get_https( $server, $port, $path,
         Net::SSLeay::make_headers( Authorization => 'Basic ' . $authstring ) );
-    if (! ($result =~ /OK$/) ) {
+    if ( !( $result =~ /OK$/xms ) ) {
         croak $result;
     }
     return ($page);
@@ -349,7 +326,7 @@ sub _request_using_password {
 ### Output:
 ###   The query path with the special characters properly encoded
 ###
-sub _get_path {
+sub get_path {
     my ( $method, $params ) = @_;
     my $path_start = '/reporting/api/service/';
     my $path = $path_start . $method . q(?);    # all API calls start this way

@@ -1,0 +1,2 @@
+Look into changing from XML to JSON to see if it cuts down
+on the number of dependencies we have.
