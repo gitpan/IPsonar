@@ -5,7 +5,7 @@ use warnings;
 
 use version; 
 our $VERSION;
-$VERSION = "0.17";
+$VERSION = "0.18";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -28,7 +28,7 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.17
+Version 0.18
 
 =cut
 
@@ -52,12 +52,13 @@ information from reports.
     my $results = $rsn->query('detail.devices',
         {
             'q.f.report.id'                 =>  $test_report,
-            'q.f.servicediscovery.ports'    =>  23,
+            'q.f.servicediscovery.ports'    =>  23
         }) or die "Problem ".$rsn->error;
 
     while (my $x = $rsn->next_result) {
        print "IP: $x->{ip}\n";
     }
+
 
 =head1 SUBROUTINES/METHODS
 
@@ -68,13 +69,14 @@ information from reports.
 # new(rsn, username, password)
 =over 8
 
-=item new (rsn, username, password)
+=item B<new (rsn, username, password)>
 
 =back
 
 Setup a connection to a report server using username / password 
 Note:  This doesn't actually initiate a connection until you issue
-a query.
+a query.  The I<rsn> can either be a hostname or IP address.  The username 
+and password are for one of the GUI users.
 =cut
 
 sub new {
@@ -95,13 +97,14 @@ sub new {
 #-----------------------------------------------------------
 =over 8
 
-=item new_with_cert (rsn, path_to_cert, password)
+=item B<new_with_cert (rsn, path_to_cert, password)>
 
 =back
 
 Setup a connection to a report server using SSL certificate
 Note:  This doesn't actually initiate a connection until you issue
-a query.
+a query.  The I<rsn> can either be a hostname or IP address.  The 
+password is the password required to unlock your certificate (as required).
 
 =cut
 
@@ -124,7 +127,7 @@ sub new_with_cert {
 #-----------------------------------------------------------
 =over 8
 
-=item $rsn->query ( method, hashref_of_parameters)
+=item B<$rsn->query ( method, hashref_of_parameters)>
 
 =back
 
@@ -132,6 +135,8 @@ Issue a query (get results for non-paged queries).
 If you're getting back paged data we'll return the number of items
 available in the query.  If we're getting back a single result we
 return a hashref to those results.
+
+If the query fails we'll leave the reason in $rsn->error
 
 =cut
 
@@ -225,7 +230,7 @@ sub query {
 #-----------------------------------------------------------
 =over 8
 
-=item $rsn->next_result ()
+=item B<$rsn-E<gt>next_result ()>
 
 =back
 
@@ -273,7 +278,7 @@ sub next_result {
 #-----------------------------------------------------------
 =over 8
 
-=item $rsn->error
+=item B<$rsn-E<gt>error>
 
 =back
 
@@ -375,3 +380,65 @@ sub _get_path {
 
 1;
 
+=head1 USAGE
+
+The way I've settled on using this is to build the query I want using
+the built-in IPsonar query builder.  Once I've got that fine tuned I
+translate the url into a query.
+
+For example, if I build a query to get all the routers from report 49 
+(showing port information), I'd wind up with the following URL:
+
+https://s2/reporting/api/service/detail.devices?fmt=xml&q.page=0&q.pageSize=100&q.details=Ports&q.f.report&q.f.report.id=49&q.f.router&q.f.router.router=true
+
+This module takes care of the I<fmt>, I<q.page>, and I<q.pageSize> parameters 
+for you (you can specify I<q.pageSize> if you really want).  
+I might translate that into the following code:
+
+    #!/usr/bin/perl
+
+    use strict;
+    use warnings;
+
+    use IPsonar;
+    use Data::Dumper;
+
+    my $rsn = IPsonar->new('s2','username','password');
+
+    my $results = $rsn->query('detail.devices',
+        {
+            'q.details'                     =>  'Ports',
+            'q.f.report.id'                 =>  49,
+            'q.f.router.router'             =>  'true',
+        }) or die "Problem ".$rsn->error;
+
+    while ( my $x = $rsn->next_result ) {
+        print Dumper($x);
+        my $ports = $x->{ports}->{closedPorts}->{integer};
+        print ref($ports) eq 'ARRAY' ? join ',' , @{$ports} : $ports ;
+    }
+
+And get this as a result:
+
+$VAR1 = {
+    'ports' => {
+        'openPorts' => {
+            'integer' => '23'
+        },
+        'closedPorts' => {
+            'integer' => [
+                '21',
+                '22',
+                '25',
+            ]
+       }
+   },
+'ip' => '10.2.0.2'
+};
+21,23,25
+
+Note that things like ports might come back as an Arrayref or might 
+come back as a single item.  I find there's some tweaking involved as you 
+figure out how the data is laid out.
+
+=cut

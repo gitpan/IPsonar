@@ -15,3 +15,6 @@ Revision history for IPsonar
 
 0.17    Fix the Makefile to reflect "MIME::Base64" instead of "Mime::Base64"
 
+0.18    Add a usage section to the POD, start fleshing out the method
+        documentation.
+
