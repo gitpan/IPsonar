@@ -5,7 +5,7 @@ use warnings;
 
 use version; 
 our $VERSION;
-$VERSION = "0.18";
+$VERSION = "0.19";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -28,7 +28,7 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.18
+Version 0.19
 
 =cut
 
@@ -67,6 +67,7 @@ information from reports.
 
 #-----------------------------------------------------------
 # new(rsn, username, password)
+
 =over 8
 
 =item B<new (rsn, username, password)>
@@ -77,6 +78,7 @@ Setup a connection to a report server using username / password
 Note:  This doesn't actually initiate a connection until you issue
 a query.  The I<rsn> can either be a hostname or IP address.  The username 
 and password are for one of the GUI users.
+
 =cut
 
 sub new {
@@ -95,6 +97,7 @@ sub new {
 }
 
 #-----------------------------------------------------------
+
 =over 8
 
 =item B<new_with_cert (rsn, path_to_cert, password)>
@@ -125,6 +128,7 @@ sub new_with_cert {
 }
 
 #-----------------------------------------------------------
+
 =over 8
 
 =item B<$rsn->query ( method, hashref_of_parameters)>
@@ -228,6 +232,7 @@ sub query {
 }
 
 #-----------------------------------------------------------
+
 =over 8
 
 =item B<$rsn-E<gt>next_result ()>
@@ -239,6 +244,7 @@ results.
 
 Note:  Currently, we always return a hashref to the same (only) non-paged
 results.
+
 =cut
 
 sub next_result {
@@ -276,6 +282,7 @@ sub next_result {
 }
 
 #-----------------------------------------------------------
+
 =over 8
 
 =item B<$rsn-E<gt>error>
@@ -283,6 +290,7 @@ sub next_result {
 =back
 
 Get error information
+
 =cut
 
 sub error {
@@ -420,22 +428,22 @@ I might translate that into the following code:
 
 And get this as a result:
 
-$VAR1 = {
-    'ports' => {
-        'openPorts' => {
-            'integer' => '23'
-        },
-        'closedPorts' => {
-            'integer' => [
-                '21',
-                '22',
-                '25',
-            ]
-       }
-   },
-'ip' => '10.2.0.2'
-};
-21,23,25
+    $VAR1 = {
+        'ports' => {
+            'openPorts' => {
+                'integer' => '23'
+            },
+            'closedPorts' => {
+                'integer' => [
+                    '21',
+                    '22',
+                    '25',
+                ]
+        }
+    },
+    'ip' => '10.2.0.2'
+    };
+    21,23,25
 
 Note that things like ports might come back as an Arrayref or might 
 come back as a single item.  I find there's some tweaking involved as you 

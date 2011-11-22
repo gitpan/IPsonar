@@ -18,3 +18,4 @@ Revision history for IPsonar
 0.18    Add a usage section to the POD, start fleshing out the method
         documentation.
 
+0.19    Clean up the POD directives to make pod2html happy.
