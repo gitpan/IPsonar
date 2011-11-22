@@ -18,7 +18,7 @@ WriteMakefile(
         'LWP::UserAgent' => 0,
         'XML::Simple' => 0,
         'URI' => 0,
-        'Mime::Base64' => 0,
+        'MIME::Base64' => 0,
         'Carp' => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },

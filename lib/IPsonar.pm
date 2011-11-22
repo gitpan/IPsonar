@@ -5,7 +5,7 @@ use warnings;
 
 use version; 
 our $VERSION;
-$VERSION = "0.16";
+$VERSION = "0.17";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -28,7 +28,7 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.16
+Version 0.17
 
 =cut
 
@@ -72,7 +72,7 @@ information from reports.
 
 =back
 
-Establish connection to a report server using username / password 
+Setup a connection to a report server using username / password 
 Note:  This doesn't actually initiate a connection until you issue
 a query.
 =cut
@@ -99,7 +99,9 @@ sub new {
 
 =back
 
-Establish connection to a report server using SSL certificate
+Setup a connection to a report server using SSL certificate
+Note:  This doesn't actually initiate a connection until you issue
+a query.
 
 =cut
 
@@ -227,7 +229,11 @@ sub query {
 
 =back
 
-Get next paged results
+Get next paged results as a hashref.  Returns 0 when we've got no more
+results.
+
+Note:  Currently, we always return a hashref to the same (only) non-paged
+results.
 =cut
 
 sub next_result {

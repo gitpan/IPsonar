@@ -13,3 +13,5 @@ Revision history for IPsonar
         Also tweak the example and note that "Lumeta" and 
         "IPsonar" are registered marks of the Lumeta Corporation.
 
+0.17    Fix the Makefile to reflect "MIME::Base64" instead of "Mime::Base64"
+
