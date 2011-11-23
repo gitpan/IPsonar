@@ -5,7 +5,7 @@ use warnings;
 
 use version; 
 our $VERSION;
-$VERSION = "0.19";
+$VERSION = "0.20";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -28,7 +28,7 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.19
+Version 0.20
 
 =cut
 
@@ -43,8 +43,8 @@ information from reports.
 
 =head1 EXAMPLE
 
-    Script to get all the IP address for all the devices that have
-    port 23 open:
+    # Script to get all the IP address for all the devices that have
+    # port 23 open:
 
     my $rsn = IPsonar->new('rsn_address_or_name','username','password');
     my $test_report = 23;
@@ -60,7 +60,7 @@ information from reports.
     }
 
 
-=head1 SUBROUTINES/METHODS
+=head1 CONSTRUCTORS
 
 =cut
 
@@ -76,8 +76,8 @@ information from reports.
 
 Setup a connection to a report server using username / password 
 Note:  This doesn't actually initiate a connection until you issue
-a query.  The I<rsn> can either be a hostname or IP address.  The username 
-and password are for one of the GUI users.
+a query.  The I<rsn> can either be a hostname or IP address.  The I<username> 
+and I<password> are for one of the GUI users.
 
 =cut
 
@@ -107,7 +107,7 @@ sub new {
 Setup a connection to a report server using SSL certificate
 Note:  This doesn't actually initiate a connection until you issue
 a query.  The I<rsn> can either be a hostname or IP address.  The 
-password is the password required to unlock your certificate (as required).
+I<password> is the password required to unlock your certificate (as required).
 
 =cut
 
@@ -129,9 +129,11 @@ sub new_with_cert {
 
 #-----------------------------------------------------------
 
+=head1 METHODS
+
 =over 8
 
-=item B<$rsn->query ( method, hashref_of_parameters)>
+=item B<$rsn-E<gt>query ( method, hashref_of_parameters)>
 
 =back
 
