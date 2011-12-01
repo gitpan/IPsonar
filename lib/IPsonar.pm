@@ -5,7 +5,7 @@ use warnings;
 
 use version; 
 our $VERSION;
-$VERSION = "#VER#";
+$VERSION = "0.22";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -28,8 +28,8 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version #VER#
-(Mercurial Revision ID: #HGID#)
+Version 0.22
+(Mercurial Revision ID: bf47f5110c1b+)
 
 =cut
 
