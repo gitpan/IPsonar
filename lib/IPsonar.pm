@@ -5,7 +5,7 @@ use warnings;
 
 use version; 
 our $VERSION;
-$VERSION = "0.20";
+$VERSION = "#VER#";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -28,7 +28,8 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.20
+Version #VER#
+(Mercurial Revision ID: #HGID#)
 
 =cut
 
@@ -127,6 +128,42 @@ sub new_with_cert {
     return $self;
 }
 
+# This function is to allow us to run unit tests without having
+# access to a live RSN or the exact same reports I originally tested
+# against.  We're reading from a file with pre-canned requests and data.
+sub _new_with_file { # _new_with_file(file)
+    my $class     = shift;
+    my $file      = shift;
+    my $self      = {};
+    $self->{pages} = {};
+
+    # Fill in $self->{pages}
+    open my $testfile, "<", $file or croak "Couldn't open $file";
+    my $page = q{};
+    my $request;
+    while (<$testfile>) {
+        if (/^URL: (.*)$/) {
+            $self->{pages}->{$request} = $page if $page;
+            $request = $1;
+            $page = q{};
+        }
+        else {
+            $page .= $_;
+        }
+    }
+    $self->{pages}->{$request} = $page;
+
+    $self->{request} = sub {    #request(query, parameters)
+        my $query  = shift;
+        my $params = shift;
+        my $path = _get_path( $query, $params );
+        return $self->{pages}->{"$path"} or
+            croak "Couldn't find $path in file";
+    };
+    bless $self, $class;
+    return $self;
+}
+
 #-----------------------------------------------------------
 
 =head1 METHODS
@@ -152,8 +189,12 @@ sub query {
     $self->{params} = shift;
 
     # Set default parameters (over-riding fmt, it must be XML).
-    $self->{params}->{'q.page'} //= 0;
-    $self->{params}->{'q.pageSize'} //= DEFAULT_PAGE_SIZE;
+    $self->{params}->{'q.page'} ||= 0;
+
+    if (! defined ( $self->{params}->{'q.pageSize'} )) {
+        $self->{params}->{'q.pageSize'} = DEFAULT_PAGE_SIZE;
+    }
+
     $self->{params}->{fmt} = 'xml';
 
     #-----------------------------------------------------------
@@ -349,6 +390,8 @@ sub _request_using_password {
     my ( $server, $method, $params, $uname, $passwd ) = @_;
     my $port = HTTPS_TCP_PORT;                  # The usual port for https
     my $path = _get_path( $method, $params );    # See "Constructing URLs"
+    #print "URL: https://$server$path\n";
+    
     my $authstring = MIME::Base64::encode( "$uname:$passwd", q() );
     my ( $page, $result, %headers ) =           # we're only interested in $page
       Net::SSLeay::get_https( $server, $port, $path,

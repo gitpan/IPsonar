@@ -10,3 +10,5 @@ t/pod-coverage.t
 t/pod.t
 t/001_setup.t
 t/002_paging.t
+t/001a_setup.t
+t/002a_paging.t
