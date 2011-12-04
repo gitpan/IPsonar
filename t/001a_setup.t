@@ -37,6 +37,6 @@ eval {
             'q.pageSize'    =>  100,
         });
 };
-like( $@, qr/Connection refused/,"query croaks on invalid RSN");
+like( $@, qr/connection.*refused/xmsi,"query croaks on invalid RSN");
 
 

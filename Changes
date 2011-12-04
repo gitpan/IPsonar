@@ -19,3 +19,8 @@ Revision history for IPsonar
         documentation.
 
 0.19    Clean up the POD directives to make pod2html happy.
+
+0.22    Fix cpantesters errors about //= and the connection
+        refused message under windows.
+
+0.23    Fix the same connection refused message in 001a_setup.t
