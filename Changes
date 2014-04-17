@@ -24,3 +24,7 @@ Revision history for IPsonar
         refused message under windows.
 
 0.23    Fix the same connection refused message in 001a_setup.t
+
+0.24    Adds a function to setup a connection to a local report server (which doesn't need a password)
+        Fixes paging in cases where IPsonar doesn't return the number of rows it says it will.
+        Also allow us to run under XML::Simple qw(:strict)

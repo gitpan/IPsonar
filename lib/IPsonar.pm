@@ -3,13 +3,13 @@ package IPsonar;
 use strict;
 use warnings;
 
-use version; 
+use version;
 our $VERSION;
-$VERSION = "0.23";
+$VERSION = "0.24";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
-use XML::Simple;
+use XML::Simple qw(:strict);
 use Data::Dumper;
 use MIME::Base64;
 use LWP::UserAgent;
@@ -21,18 +21,16 @@ use constant {
 
 # "IPsonar" and "Lumeta" are both registered marks of the Lumeta Corporation.
 
-
 =head1 NAME
 
 IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.23
-(Mercurial Revision ID: 855a2750fa4f)
+Version 0.24
+(Mercurial Revision ID: f86f8d69bb02+)
 
 =cut
-
 
 =head1 SYNOPSIS
 
@@ -65,7 +63,6 @@ information from reports.
 
 =cut
 
-
 #-----------------------------------------------------------
 # new(rsn, username, password)
 
@@ -84,10 +81,10 @@ and I<password> are for one of the GUI users.
 
 sub new {
     my $class    = shift;
-    my $self     = {};
     my $rsn      = shift;
     my $username = shift;
     my $password = shift;
+    my $self     = {};
     $self->{request} = sub {    #request(query, parameters)
         my $query  = shift;
         my $params = shift;
@@ -131,10 +128,10 @@ sub new_with_cert {
 # This function is to allow us to run unit tests without having
 # access to a live RSN or the exact same reports I originally tested
 # against.  We're reading from a file with pre-canned requests and data.
-sub _new_with_file { # _new_with_file(file)
-    my $class     = shift;
-    my $file      = shift;
-    my $self      = {};
+sub _new_with_file {    # _new_with_file(file)
+    my $class = shift;
+    my $file  = shift;
+    my $self  = {};
     $self->{pages} = {};
 
     # Fill in $self->{pages}
@@ -144,8 +141,8 @@ sub _new_with_file { # _new_with_file(file)
     while (<$testfile>) {
         if (/^URL: (.*)$/) {
             $self->{pages}->{$request} = $page if $page;
-            $request = $1;
-            $page = q{};
+            $request                   = $1;
+            $page                      = q{};
         }
         else {
             $page .= $_;
@@ -156,9 +153,33 @@ sub _new_with_file { # _new_with_file(file)
     $self->{request} = sub {    #request(query, parameters)
         my $query  = shift;
         my $params = shift;
-        my $path = _get_path( $query, $params );
-        return $self->{pages}->{"$path"} or
-            croak "Couldn't find $path in file";
+        my $path   = _get_path( $query, $params );
+        return $self->{pages}->{"$path"}
+          or croak "Couldn't find $path in file";
+    };
+    bless $self, $class;
+    return $self;
+}
+
+#-----------------------------------------------------------
+
+=over 8
+
+=item B<new_localhost>
+
+=back
+
+Setup a connection to the report server you're on
+
+=cut
+
+sub new_localhost {
+    my $class = shift;
+    my $self  = {};
+    $self->{request} = sub {    #request(query, parameters)
+        my $query  = shift;
+        my $params = shift;
+        _request_localhost( $query, $params );
     };
     bless $self, $class;
     return $self;
@@ -191,7 +212,7 @@ sub query {
     # Set default parameters (over-riding fmt, it must be XML).
     $self->{params}->{'q.page'} ||= 0;
 
-    if (! defined ( $self->{params}->{'q.pageSize'} )) {
+    if ( !defined( $self->{params}->{'q.pageSize'} ) ) {
         $self->{params}->{'q.pageSize'} = DEFAULT_PAGE_SIZE;
     }
 
@@ -218,17 +239,19 @@ sub query {
     # KeyAttr => [] because otherwise XML::Simple tries to be clever
     # and hand back a hashref keyed on "id" or "name" instead of an
     # arrayref of items.
-    my $xml = XMLin( $res, KeyAttr => [] );
+    my $xml = XMLin( $res, KeyAttr => [], ForceArray => 1 );
 
     if ( $xml->{status} ne 'SUCCESS' ) {
-        $self->{error} = $xml->{error}->{detail};
+
+        print Dumper($xml) . "\n";
+        $self->{error} = $xml->{error}[0]->{detail}[0];
         croak $self->{error};
     }
 
-    $self->{xml} = $xml;
+    $self->{xml}      = $xml;
     $self->{page_row} = 0;
 
-    if (defined ($xml->{total}) and $xml->{total} == 0 ) {
+    if ( defined( $xml->{total} ) and $xml->{total} == 0 ) {
         $self->{total} = 0;
         $self->{paged} = 1;
         return $xml;
@@ -239,28 +262,28 @@ sub query {
         my $page_size = $self->{params}->{'q.pageSize'};
 
         # Figure out what the key to the array data is
-        my $temp = XMLin( $res, NoAttr => 1, KeyAttr => [] );
+        my $temp = XMLin( $res, NoAttr => 1, KeyAttr => [], ForceArray => 1 );
         my $key = ( keys %{$temp} )[0];
         $self->{pagedata} = $self->{xml}->{$key};
-        warn "Key = $key, Self = ".Dumper($self) if ! $self->{xml}->{$key};
+        warn "Key = $key, Self = " . Dumper($self) if !$self->{xml}->{$key};
 
         # Setup paging information
         #TODO this is a honking mess, too many special conditions.
-        $self->{paged}    = 1;
-        $self->{max_page} = int( ($self->{total}-1) / $page_size );
+        $self->{paged} = 1;
+        $self->{max_page} = int( ( $self->{total} - 1 ) / $page_size );
 
         $self->{max_row} =
             $self->{params}->{'q.page'} < $self->{max_page}
-          ? $page_size-1
-          : ( ($self->{total} % $page_size) || $page_size ) - 1;
+          ? $page_size - 1
+          : ( ( $self->{total} % $page_size ) || $page_size ) - 1;
 
         # There's only one page with $self->{total} items
-        if ($self->{params}->{'q.pageSize'} == $self->{total}) {
+        if ( $self->{params}->{'q.pageSize'} == $self->{total} ) {
             $self->{max_row} = $self->{total} - 1;
         }
 
         # We're looking at things with pagesize 1
-        if ($self->{params}->{'q.pageSize'} == 1) {
+        if ( $self->{params}->{'q.pageSize'} == 1 ) {
             $self->{max_row} = 0;
         }
 
@@ -303,19 +326,30 @@ sub next_result {
     return $self->{xml} if !$self->{paged};
 
     #End of Data
-    if ($self->{params}->{'q.page'} == $self->{max_page} &&
-        $self->{page_row} > $self->{max_row}) {
-            return;
+    if (
+        $self->{params}->{'q.page'} == $self->{max_page}
+        && ( $self->{page_row} > $self->{max_row}
+            || !$self->{pagedata}[ $self->{page_row} ] )
+      )
+    {
+        return;
     }
 
     #End of Page
-    if ( $self->{page_row} > $self->{max_row} ) {
+    # The pagedata of this test handles cases where IPsonar doesn't
+    # return all the rows it's supposed to (rare, but it happens)
+    if (
+        $self->{page_row} > $self->{max_row}
+        || ( ref( $self->{pagedata} ) eq 'ARRAY'
+            && !$self->{pagedata}[ $self->{page_row} ] )
+      )
+    {
         $self->{params}->{'q.page'}++;
         $self->query( $self->{query}, $self->{params} );
     }
 
     #Single item on last page
-    if ( $self->{page_row} == 0 and $self->{max_row} == 0 ) { 
+    if ( $self->{page_row} == 0 and $self->{max_row} == 0 ) {
         $self->{page_row}++;
         return $self->{pagedata};
     }
@@ -388,18 +422,30 @@ sub _request_using_certificate {
 ###
 sub _request_using_password {
     my ( $server, $method, $params, $uname, $passwd ) = @_;
-    my $port = HTTPS_TCP_PORT;                  # The usual port for https
+    my $port = HTTPS_TCP_PORT;                   # The usual port for https
     my $path = _get_path( $method, $params );    # See "Constructing URLs"
-    #print "URL: https://$server$path\n";
-    
+         #print "URL: https://$server$path\n";
+
     my $authstring = MIME::Base64::encode( "$uname:$passwd", q() );
-    my ( $page, $result, %headers ) =           # we're only interested in $page
+    my ( $page, $result, %headers ) =    # we're only interested in $page
       Net::SSLeay::get_https( $server, $port, $path,
         Net::SSLeay::make_headers( Authorization => 'Basic ' . $authstring ) );
-    if (! ($result =~ /OK$/) ) {
+    if ( !( $result =~ /OK$/ ) ) {
         croak $result;
     }
     return ($page);
+}
+
+sub _request_localhost {
+    my ( $method, $params ) = @_;
+    my $path = _get_path( $method, $params );    # See "Constructing URLs"
+    my $url = "http://127.0.0.1:8081${path}";
+
+    my $ua  = LWP::UserAgent->new;
+    my $req = HTTP::Request->new( 'GET', $url );
+    my $res = $ua->request($req);
+
+    return $res->content;
 }
 
 #===========================================================
