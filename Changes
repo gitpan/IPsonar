@@ -28,3 +28,6 @@ Revision history for IPsonar
 0.24    Adds a function to setup a connection to a local report server (which doesn't need a password)
         Fixes paging in cases where IPsonar doesn't return the number of rows it says it will.
         Also allow us to run under XML::Simple qw(:strict)
+
+0.25    Fix a bug (introduced on 0.24) that caused the module to return array refs
+        everywhere.

@@ -5,7 +5,7 @@ use warnings;
 
 use version;
 our $VERSION;
-$VERSION = "0.25";
+$VERSION = "#VER#";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -27,8 +27,8 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.25
-(Mercurial Revision ID: f86f8d69bb02+)
+Version #VER#
+(Mercurial Revision ID: #HGID#)
 
 =cut
 
@@ -239,12 +239,12 @@ sub query {
     # KeyAttr => [] because otherwise XML::Simple tries to be clever
     # and hand back a hashref keyed on "id" or "name" instead of an
     # arrayref of items.
-    my $xml = XMLin( $res, KeyAttr => [], ForceArray => [] );
+    my $xml = XMLin( $res, KeyAttr => [], ForceArray => 1 );
 
     if ( $xml->{status} ne 'SUCCESS' ) {
 
         print Dumper($xml) . "\n";
-        $self->{error} = $xml->{error}->{detail};
+        $self->{error} = $xml->{error}[0]->{detail}[0];
         croak $self->{error};
     }
 

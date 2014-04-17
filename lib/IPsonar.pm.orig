@@ -5,7 +5,7 @@ use warnings;
 
 use version;
 our $VERSION;
-$VERSION = "0.25";
+$VERSION = "#VER#";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -27,8 +27,8 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.25
-(Mercurial Revision ID: f86f8d69bb02+)
+Version #VER#
+(Mercurial Revision ID: #HGID#)
 
 =cut
 
@@ -239,11 +239,10 @@ sub query {
     # KeyAttr => [] because otherwise XML::Simple tries to be clever
     # and hand back a hashref keyed on "id" or "name" instead of an
     # arrayref of items.
-    my $xml = XMLin( $res, KeyAttr => [], ForceArray => [] );
+    my $xml = XMLin( $res, KeyAttr => [], ForceArray => 0 );
 
     if ( $xml->{status} ne 'SUCCESS' ) {
 
-        print Dumper($xml) . "\n";
         $self->{error} = $xml->{error}->{detail};
         croak $self->{error};
     }
@@ -262,8 +261,8 @@ sub query {
         my $page_size = $self->{params}->{'q.pageSize'};
 
         # Figure out what the key to the array data is
-        my $temp = XMLin( $res, NoAttr => 1, KeyAttr => [], ForceArray => 1 );
-        my $key = ( keys %{$temp} )[0];
+        my $temp = XMLin( $res, NoAttr => 1, KeyAttr => [], ForceArray => 0 );
+        my $key = ( keys %{$temp} );
         $self->{pagedata} = $self->{xml}->{$key};
         warn "Key = $key, Self = " . Dumper($self) if !$self->{xml}->{$key};
 
