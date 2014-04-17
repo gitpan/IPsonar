@@ -5,7 +5,7 @@ use warnings;
 
 use version;
 our $VERSION;
-$VERSION = "0.25";
+$VERSION = "0.26";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -27,8 +27,8 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.25
-(Mercurial Revision ID: f86f8d69bb02+)
+Version 0.26
+(Mercurial Revision ID: 2721c46e7b1e+)
 
 =cut
 
@@ -155,7 +155,7 @@ sub _new_with_file {    # _new_with_file(file)
         my $params = shift;
         my $path   = _get_path( $query, $params );
         return $self->{pages}->{"$path"}
-          or croak "Couldn't find $path in file";
+          || croak "Couldn't find $path in file";
     };
     bless $self, $class;
     return $self;
