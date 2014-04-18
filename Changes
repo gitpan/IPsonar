@@ -31,3 +31,8 @@ Revision history for IPsonar
 
 0.25    Fix a bug (introduced on 0.24) that caused the module to return array refs
         everywhere.
+
+0.27    Add "reports" convenience method to quickly get a list of reports
+
+0.28    Fix the reports unit test around timestamps (use gmtime, not localtime which obviously failed
+        tests everywhere but this timezone).
