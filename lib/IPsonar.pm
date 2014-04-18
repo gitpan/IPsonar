@@ -5,7 +5,7 @@ use warnings;
 
 use version;
 our $VERSION;
-$VERSION = "0.26";
+$VERSION = "0.27";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -27,8 +27,8 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.26
-(Mercurial Revision ID: 2721c46e7b1e+)
+Version 0.27
+(Mercurial Revision ID: 25c7bbec14ab+)
 
 =cut
 
@@ -477,6 +477,38 @@ sub _get_path {
     return ( $encoded->as_string );
 }
 
+#-----------------------------------------------------------
+
+=head1 METHODS
+
+=over 8
+
+=item B<$rsn-E<gt>reports ()>
+
+=back
+
+Returns an array representing the reports on this RSN.
+This array is sorted by ascending report id.
+Do not run this while you're iterating through another query as
+it will reset its internal state.
+Timestamps are converted to epoch time.
+
+=cut
+
+sub reports {
+    my $self = shift;
+    my @reports;
+    my $results = $self->query( 'config.reports', {} )
+      or croak "Problem " . $self->error;
+
+    while ( my $r = $self->next_result ) {
+        $r->{timestamp} = int( $r->{timestamp} / 1000 );
+        push @reports, $r;
+    }
+
+    @reports = sort { $a->{id} <=> $b->{id} } @reports;
+    return @reports;
+}
 1;
 
 =head1 USAGE
