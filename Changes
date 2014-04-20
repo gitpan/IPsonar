@@ -36,3 +36,6 @@ Revision history for IPsonar
 
 0.28    Fix the reports unit test around timestamps (use gmtime, not localtime which obviously failed
         tests everywhere but this timezone).
+
+0.29    Make fixes to how I handle test data to properly work in the face of the effectively random
+        hash order introduced in perl 5.18

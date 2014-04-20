@@ -5,7 +5,7 @@ use warnings;
 
 use version;
 our $VERSION;
-$VERSION = "0.28";
+$VERSION = "0.29";
 
 use Net::SSLeay qw(make_headers get_https);
 use URI;
@@ -27,8 +27,8 @@ IPsonar - Wrapper to interact with the Lumeta IPsonar API
 
 =head1 VERSION
 
-Version 0.28
-(Mercurial Revision ID: e0a26f364349)
+Version 0.29
+(Mercurial Revision ID: dccdc0f9cbee+)
 
 =cut
 
@@ -141,7 +141,7 @@ sub _new_with_file {    # _new_with_file(file)
     while (<$testfile>) {
         if (/^URL: (.*)$/) {
             $self->{pages}->{$request} = $page if $page;
-            $request                   = $1;
+            $request                   = _normalize_path($1);
             $page                      = q{};
         }
         else {
@@ -153,12 +153,27 @@ sub _new_with_file {    # _new_with_file(file)
     $self->{request} = sub {    #request(query, parameters)
         my $query  = shift;
         my $params = shift;
-        my $path   = _get_path( $query, $params );
+        my $path   = _normalize_path( _get_path( $query, $params ) );
         return $self->{pages}->{"$path"}
           || croak "Couldn't find $path in file";
     };
     bless $self, $class;
     return $self;
+}
+
+#-----------------------------------------------------------
+# Normalize path exists to force the path we're looking for into
+# a specific order.  This fixes the issue I ran into at in perl 5.18
+# where hash order is now effectively random (which is a generally
+# a good thing but causes my code to fail)
+#
+# /reporting/api/service/detail.devices?q.f.report.id=23&q.f.servicediscovery.ports=2300&fmt=xml&q.pageSize=100&q.page=0 should become
+# /reporting/api/service/detail.devices?fmt=xml&q.f.report.id=23&q.f.servicediscovery.ports=2300&q.pageSize=100&q.page=0
+sub _normalize_path {
+    my $path = shift;
+    my ( $start, $rest ) = $path =~ /^(.+)\?(.*)$/;
+    my @params = split /&/, $rest;
+    return $start . '?' . join( '&', sort(@params) );
 }
 
 #-----------------------------------------------------------
@@ -492,6 +507,19 @@ This array is sorted by ascending report id.
 Do not run this while you're iterating through another query as
 it will reset its internal state.
 Timestamps are converted to epoch time.
+
+An example of how you might use this:
+
+    #!/usr/bin/perl
+
+    use strict;
+    use warnings;
+
+    use IPsonar;
+
+    my $rsn = IPsonar->new('s2','username','password');
+    my @reports = $rsn->reports;
+
 
 =cut
 

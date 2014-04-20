@@ -19,31 +19,32 @@ my $rsn_address = $ENV{TEST_RSN};
 my $test_report = $ENV{TEST_REPORT};
 
 SKIP: {
-    if (! ( $rsn_address && $test_report )) {
-        skip ( "TEST_RSN or TEST_REPORT not set.", 2 );
+    if ( !( $rsn_address && $test_report ) ) {
+        skip( "TEST_RSN or TEST_REPORT not set.", 2 );
     }
 
-    $rsn = IPsonar->new($rsn_address,'admin','admin');
+    $rsn = IPsonar->new( $rsn_address, 'admin', 'admin' );
     my $results;
-    eval {
-        $results = $rsn->query('management.systemInformation', { });
-    };
-    is ($results->{apiVersion}, '5.0', 'Connect to RSN and verify apiVersion');
+    eval { $results = $rsn->query( 'management.systemInformation', {} ); };
+    is( $results->{apiVersion}, '5.0', 'Connect to RSN and verify apiVersion' );
 
-    $rsn = IPsonar->new($rsn_address,'admin','admin');
-    eval {
-        $results = $rsn->query('invalid.ipsonar.call', { });
-    };
-    like ($@, qr/RuntimeException/, 'Check error handling for bad call');
+    $rsn = IPsonar->new( $rsn_address, 'admin', 'admin' );
+    eval { $results = $rsn->query( 'invalid.ipsonar.call', {} ); };
+    like( $@, qr/RuntimeException/, 'Check error handling for bad call' );
 }
 
-$rsn = IPsonar->new('127.0.0.1','admin','admin');
+$rsn = IPsonar->new( '127.0.0.1', 'admin', 'admin' );
 eval {
-    my $results = $rsn->query('config.reports',
+    my $results = $rsn->query(
+        'config.reports',
         {
-            'q.pageSize'    =>  100,
-        });
+            'q.pageSize' => 100,
+        }
+    );
 };
-like( $@, qr/connection.*refused/xmsi,"query croaks on invalid RSN");
-
+like(
+    $@,
+    qr/(connection.*refused|NET OR SSL ERROR)/xmsi,
+    "query croaks on invalid RSN"
+);
 
