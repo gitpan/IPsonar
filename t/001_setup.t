@@ -42,9 +42,5 @@ eval {
         }
     );
 };
-like(
-    $@,
-    qr/(connection.*refused|NET OR SSL ERROR)/xmsi,
-    "query croaks on invalid RSN"
-);
+ok( $@, "query croaks on invalid RSN" );
 

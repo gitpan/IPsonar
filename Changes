@@ -39,3 +39,7 @@ Revision history for IPsonar
 
 0.29    Make fixes to how I handle test data to properly work in the face of the effectively random
         hash order introduced in perl 5.18
+
+0.30    Change test for connecting to non-existent RSN to make the test pass as long as we croak.
+        I'm not trying to match on the error message as it's OS dependent.
+
