@@ -19,24 +19,21 @@ my $rsn;
 $rsn = IPsonar->_new_with_file('t/test1_2.data');
 
 my $results;
-eval {
-    $results = $rsn->query('management.systemInformation', { });
-};
-is ($results->{apiVersion}, '5.0', 'Connect to RSN and verify apiVersion');
+eval { $results = $rsn->query( 'management.systemInformation', {} ); };
+is( $results->{apiVersion}, '5.0', 'Connect to RSN and verify apiVersion' );
 
 $rsn = IPsonar->_new_with_file('t/test1_2.data');
-eval {
-    $results = $rsn->query('invalid.ipsonar.call', { });
-};
-like ($@, qr/RuntimeException/, 'Check error handling for bad call');
+eval { $results = $rsn->query( 'invalid.ipsonar.call', {} ); };
+like( $@, qr/RuntimeException/, 'Check error handling for bad call' );
 
-$rsn = IPsonar->new('127.0.0.1','admin','admin');
+$rsn = IPsonar->new( '127.0.0.1', 'admin', 'admin' );
 eval {
-    my $results = $rsn->query('config.reports',
+    my $results = $rsn->query(
+        'config.reports',
         {
-            'q.pageSize'    =>  100,
-        });
+            'q.pageSize' => 100,
+        }
+    );
 };
-like( $@, qr/connection.*refused/xmsi,"query croaks on invalid RSN");
-
+ok( $@, "query croaks on invalid RSN" );
 

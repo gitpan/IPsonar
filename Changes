@@ -43,3 +43,5 @@ Revision history for IPsonar
 0.30    Change test for connecting to non-existent RSN to make the test pass as long as we croak.
         I'm not trying to match on the error message as it's OS dependent.
 
+0.31    Make the above change for 001a_setup.t where it's also needed.
+
